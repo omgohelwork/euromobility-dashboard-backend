@@ -7,12 +7,14 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 import { categories, indicators, cities } from './seedData.js';
 import Category from '../src/models/Category.js';
 import City from '../src/models/City.js';
 import Indicator from '../src/models/Indicator.js';
 import Data from '../src/models/Data.js';
 import YearControl from '../src/models/YearControl.js';
+import Admin from '../src/models/Admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
@@ -31,12 +33,13 @@ async function runSeed() {
 
   try {
     // Clear in dependency order so refs don't break
-    console.log('Clearing existing Data, YearControl, Indicator, City, Category...');
+    console.log('Clearing existing Data, YearControl, Indicator, City, Category, Admin...');
     await Data.deleteMany({});
     await YearControl.deleteMany({});
     await Indicator.deleteMany({});
     await City.deleteMany({});
     await Category.deleteMany({});
+    await Admin.deleteMany({});
 
     // 1. Categories
     if (!categories.length) {
@@ -81,6 +84,14 @@ async function runSeed() {
     } else {
       console.warn('No valid indicators in seedData.js. Fix categoryName to match your categories.');
     }
+
+    // 4. Single admin (username: admin, password: Admin@123)
+    const adminPasswordHash = await bcrypt.hash('Admin@123', 10);
+    await Admin.create({
+      username: 'admin',
+      password: adminPasswordHash,
+    });
+    console.log('Inserted admin (username: admin, password: Admin@123). Change password after first login if needed.');
 
     console.log('Seed completed. You can now use Admin → Carica dati to upload indicator CSV/XLSX files.');
   } finally {
