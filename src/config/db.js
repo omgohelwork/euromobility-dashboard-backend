@@ -12,7 +12,11 @@ export async function connectDB() {
   if (connPromise) return connPromise;
 
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dashboard_osservatorio';
-  const options = { family: 4 };
+  const options = {
+    family: 4,
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 10000,
+  };
 
   connPromise = mongoose.connect(uri, options).then(() => {
     console.log('MongoDB connected');

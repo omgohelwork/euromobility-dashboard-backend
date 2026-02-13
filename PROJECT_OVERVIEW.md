@@ -183,7 +183,8 @@ Order of these four is swapped when **invertScale** is true.
 
 ### Vercel: upload timeout and body size
 
-- **Upload no longer recalculates ranges** in the same request. That keeps `/api/upload` fast (typically a few seconds) and avoids the 30s timeout. After a successful upload, the response includes **`indicatorIds`**. The frontend should then call **`POST /api/indicators/recalculate-bulk`** with body `{ "indicatorIds": ["id1", "id2", ...] }` to update indicator colors (ranges). Use a **longer client timeout** (e.g. 90s) for this second request if you have many indicators.
+- **Upload no longer recalculates ranges** in the same request. Data is written with **one bulkWrite** for all files and one YearControl update, so the handler is as fast as possible. After a successful upload, the response includes **`indicatorIds`**. The frontend should then call **`POST /api/indicators/recalculate-bulk`** with body `{ "indicatorIds": ["id1", "id2", ...] }` to update indicator colors (ranges).
+- **The "timeout of 30000ms exceeded" error is from the frontend.** The client (e.g. axios) must use a **longer timeout** for `POST /api/upload` — e.g. **90 seconds** — because the first request on Vercel can take longer (cold start + MongoDB connection). See **docs/VERCEL_UPLOAD.md** for details.
 - **Request body limit** on Vercel (Hobby) is **4.5 MB**. Keep total upload size under that, or split into multiple requests.
 
 ---

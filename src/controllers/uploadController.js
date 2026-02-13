@@ -1,8 +1,9 @@
 import Indicator from '../models/Indicator.js';
 import City from '../models/City.js';
 import YearControl from '../models/YearControl.js';
+import Data from '../models/Data.js';
 import { parseCodeFromFilename } from '../utils/parseCsvFilename.js';
-import { processOneCsv, normalizeCityName } from '../services/uploadService.js';
+import { processOneCsvToOps, normalizeCityName } from '../services/uploadService.js';
 import { success, error } from '../utils/ApiResponse.js';
 
 /**
@@ -52,6 +53,7 @@ export async function upload(req, res, next) {
 
     const results = [];
     const indicatorsUpdated = new Set();
+    const allBulkOps = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -65,15 +67,21 @@ export async function upload(req, res, next) {
         );
       }
 
-      const result = await processOneCsv(file, indicator, cityMap);
+      const result = processOneCsvToOps(file, indicator, cityMap);
       if (!result.ok) {
         return error(res, result.error, 400);
       }
       results.push({ file: file.originalname, rowsProcessed: result.rowsProcessed, years: result.years || [] });
       indicatorsUpdated.add(indicator._id.toString());
+      allBulkOps.push(...result.bulkOps);
     }
 
-    // Reset years: only years that appear in this upload exist, all enabled
+    // Single bulkWrite for all files (minimizes DB round-trips on Vercel)
+    if (allBulkOps.length > 0) {
+      await Data.bulkWrite(allBulkOps);
+    }
+
+    // One YearControl update for all years
     const uploadYears = [...new Set(results.flatMap((r) => r.years || []))]
       .filter((y) => /^\d{4}$/.test(String(y)))
       .map((y) => Number(y))

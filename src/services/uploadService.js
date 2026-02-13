@@ -120,11 +120,11 @@ export function normalizeCityName(name) {
 }
 
 /**
- * Process one CSV file: find indicator by code, find cities by name, upsert Data, update YearControl.
- * Overwrites existing data for this indicator.
- * City lookup: exact name first, then normalized (so "LAquila" matches "L'Aquila").
+ * Process one file and return Data bulkWrite ops + years (no DB writes).
+ * Use this when batching multiple files into a single bulkWrite (e.g. Vercel to avoid timeout).
+ * City lookup: exact name first, then normalized.
  */
-export async function processOneCsv(file, indicator, cityMap) {
+export function processOneCsvToOps(file, indicator, cityMap) {
   const code = parseCodeFromFilename(file.originalname);
   if (code === null) {
     return { ok: false, error: `Nome file non valido: ${file.originalname}. Atteso: 001 - Nome.csv o .xlsx` };
@@ -162,11 +162,22 @@ export async function processOneCsv(file, indicator, cityMap) {
     };
   }
 
-  if (bulkOps.length > 0) {
-    await Data.bulkWrite(bulkOps);
-  }
+  return { ok: true, bulkOps, years: allYears, rowsProcessed: rows.length };
+}
 
-  for (const y of allYears) {
+/**
+ * Process one CSV file: find indicator by code, find cities by name, upsert Data, update YearControl.
+ * Overwrites existing data for this indicator.
+ * (Used for single-file or when not using batched upload.)
+ */
+export async function processOneCsv(file, indicator, cityMap) {
+  const result = processOneCsvToOps(file, indicator, cityMap);
+  if (!result.ok) return result;
+
+  if (result.bulkOps.length > 0) {
+    await Data.bulkWrite(result.bulkOps);
+  }
+  for (const y of result.years) {
     const year = parseInt(y, 10);
     if (Number.isFinite(year)) {
       await YearControl.findOneAndUpdate(
@@ -176,8 +187,7 @@ export async function processOneCsv(file, indicator, cityMap) {
       );
     }
   }
-
-  return { ok: true, rowsProcessed: rows.length, years: allYears };
+  return { ok: true, rowsProcessed: result.rowsProcessed, years: result.years };
 }
 
 /**
