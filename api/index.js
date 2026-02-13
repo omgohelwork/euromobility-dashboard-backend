@@ -6,4 +6,7 @@ dotenv.config();
 
 import app from '../src/app.js';
 
+/** Allow upload endpoint to run up to 60s on Vercel (avoids FUNCTION_INVOCATION_TIMEOUT). */
+export const config = { maxDuration: 60 };
+
 export default app;
