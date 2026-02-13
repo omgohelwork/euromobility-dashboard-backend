@@ -10,6 +10,7 @@ import { success, error } from '../utils/ApiResponse.js';
  * Multer puts files in req.files (array). Each file: { originalname, buffer }.
  * Validate: each filename = "001 - Name.csv", indicator with that code exists.
  * Process each file: overwrite data for that indicator, then recalculate ranges.
+ * Optimized for Vercel: single indicator fetch, parallel range recalc.
  */
 export async function upload(req, res, next) {
   try {
@@ -17,6 +18,24 @@ export async function upload(req, res, next) {
     if (files.length === 0) {
       return error(res, 'Nessun file caricato', 400);
     }
+
+    // Parse all codes and validate filenames first
+    const codes = [];
+    for (const file of files) {
+      const code = parseCodeFromFilename(file.originalname);
+      if (code === null) {
+        return error(
+          res,
+          `Nome file non valido: "${file.originalname}". Formato atteso: 001 - NomeFile.csv o .xlsx`,
+          400
+        );
+      }
+      codes.push(code);
+    }
+
+    // Single query for all indicators (faster on Vercel/serverless)
+    const indicators = await Indicator.find({ code: { $in: codes } }).lean();
+    const indicatorByCode = new Map(indicators.map((i) => [i.code, i]));
 
     const cityList = await City.find().lean();
     const cityMap = new Map();
@@ -33,17 +52,10 @@ export async function upload(req, res, next) {
     const results = [];
     const indicatorsUpdated = new Set();
 
-    for (const file of files) {
-      const code = parseCodeFromFilename(file.originalname);
-      if (code === null) {
-        return error(
-          res,
-          `Nome file non valido: "${file.originalname}". Formato atteso: 001 - NomeFile.csv o .xlsx`,
-          400
-        );
-      }
-
-      const indicator = await Indicator.findOne({ code }).lean();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const code = codes[i];
+      const indicator = indicatorByCode.get(code);
       if (!indicator) {
         return error(
           res,
@@ -71,15 +83,15 @@ export async function upload(req, res, next) {
       await YearControl.insertMany(uploadYears.map((year) => ({ year, enabled: true })));
     }
 
-    // Recalculate ranges for each affected indicator
-    for (const id of indicatorsUpdated) {
+    // Recalculate ranges in parallel (reduces time on Vercel)
+    const recalcPromises = [...indicatorsUpdated].map(async (id) => {
       const ind = await Indicator.findById(id);
-      if (ind) {
-        const ranges = await recalculateRangesForIndicator(ind);
-        ind.ranges = ranges;
-        await ind.save();
-      }
-    }
+      if (!ind) return;
+      const ranges = await recalculateRangesForIndicator(ind);
+      ind.ranges = ranges;
+      await ind.save();
+    });
+    await Promise.all(recalcPromises);
 
     return success(res, {
       message: `Caricati ${files.length} file`,

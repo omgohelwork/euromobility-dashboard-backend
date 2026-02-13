@@ -181,6 +181,11 @@ Order of these four is swapped when **invertScale** is true.
 4. Use the Admin (or API) to **upload data** with files named `001 - FileName.csv` / `.xlsx`.
 5. Optionally: add more cities via Admin → Città → upload; add/edit indicators and complex indicators via API/Admin.
 
+### Vercel: upload timeout and body size
+
+- **`vercel.json`** sets **`maxDuration: 60`** for the serverless function so `/api/upload` can run up to 60 seconds. If you still see timeouts, upload **fewer or smaller files per request** (e.g. 5–10 files at a time).
+- **Request body limit** on Vercel (Hobby) is **4.5 MB**. Keep total upload size under that, or split into multiple requests.
+
 ---
 
 ## 10. Summary
