@@ -183,7 +183,7 @@ Order of these four is swapped when **invertScale** is true.
 
 ### Vercel: upload timeout and body size
 
-- **`vercel.json`** sets **`maxDuration: 60`** for the serverless function so `/api/upload` can run up to 60 seconds. If you still see timeouts, upload **fewer or smaller files per request** (e.g. 5–10 files at a time).
+- **Upload no longer recalculates ranges** in the same request. That keeps `/api/upload` fast (typically a few seconds) and avoids the 30s timeout. After a successful upload, the response includes **`indicatorIds`**. The frontend should then call **`POST /api/indicators/recalculate-bulk`** with body `{ "indicatorIds": ["id1", "id2", ...] }` to update indicator colors (ranges). Use a **longer client timeout** (e.g. 90s) for this second request if you have many indicators.
 - **Request body limit** on Vercel (Hobby) is **4.5 MB**. Keep total upload size under that, or split into multiple requests.
 
 ---

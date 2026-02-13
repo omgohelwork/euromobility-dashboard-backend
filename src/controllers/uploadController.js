@@ -2,15 +2,16 @@ import Indicator from '../models/Indicator.js';
 import City from '../models/City.js';
 import YearControl from '../models/YearControl.js';
 import { parseCodeFromFilename } from '../utils/parseCsvFilename.js';
-import { processOneCsv, recalculateRangesForIndicator, normalizeCityName } from '../services/uploadService.js';
+import { processOneCsv, normalizeCityName } from '../services/uploadService.js';
 import { success, error } from '../utils/ApiResponse.js';
 
 /**
  * POST /api/upload
  * Multer puts files in req.files (array). Each file: { originalname, buffer }.
  * Validate: each filename = "001 - Name.csv", indicator with that code exists.
- * Process each file: overwrite data for that indicator, then recalculate ranges.
- * Optimized for Vercel: single indicator fetch, parallel range recalc.
+ * Process each file: overwrite data for that indicator.
+ * Range recalculation is NOT done here (avoids Vercel timeout). Frontend should call
+ * POST /api/indicators/recalculate-bulk with the returned indicatorIds after upload.
  */
 export async function upload(req, res, next) {
   try {
@@ -83,20 +84,12 @@ export async function upload(req, res, next) {
       await YearControl.insertMany(uploadYears.map((year) => ({ year, enabled: true })));
     }
 
-    // Recalculate ranges in parallel (reduces time on Vercel)
-    const recalcPromises = [...indicatorsUpdated].map(async (id) => {
-      const ind = await Indicator.findById(id);
-      if (!ind) return;
-      const ranges = await recalculateRangesForIndicator(ind);
-      ind.ranges = ranges;
-      await ind.save();
-    });
-    await Promise.all(recalcPromises);
-
+    const indicatorIds = [...indicatorsUpdated];
     return success(res, {
       message: `Caricati ${files.length} file`,
       files: results,
-      indicatorsRecalculated: indicatorsUpdated.size,
+      indicatorIds,
+      hint: 'Chiamare POST /api/indicators/recalculate-bulk con { indicatorIds } per aggiornare i colori (ranges).',
     }, 201);
   } catch (e) {
     next(e);

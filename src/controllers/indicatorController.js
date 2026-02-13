@@ -140,3 +140,25 @@ export async function recalculate(req, res, next) {
     next(e);
   }
 }
+
+/** POST /api/indicators/recalculate-bulk – recalc ranges for many indicators (e.g. after upload). */
+export async function recalculateBulk(req, res, next) {
+  try {
+    const indicatorIds = req.body.indicatorIds || [];
+    if (!Array.isArray(indicatorIds) || indicatorIds.length === 0) {
+      return success(res, { updated: 0, message: 'Nessun indicatore da ricalcolare' });
+    }
+    const promises = indicatorIds.map(async (id) => {
+      const ind = await Indicator.findById(id);
+      if (!ind) return null;
+      const ranges = await recalculateRangesForIndicator(ind);
+      ind.ranges = ranges;
+      await ind.save();
+      return id;
+    });
+    const updated = (await Promise.all(promises)).filter(Boolean);
+    return success(res, { updated: updated.length, indicatorIds: updated });
+  } catch (e) {
+    next(e);
+  }
+}

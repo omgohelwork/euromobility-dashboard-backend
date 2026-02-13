@@ -8,6 +8,12 @@ const router = Router();
 router.get('/', indicatorController.list);
 router.get('/ids-with-data', indicatorController.idsWithData);
 router.post(
+  '/recalculate-bulk',
+  [body('indicatorIds').isArray().withMessage('indicatorIds deve essere un array'), body('indicatorIds.*').isMongoId().withMessage('ID indicatore non valido')],
+  validate,
+  indicatorController.recalculateBulk
+);
+router.post(
   '/',
   [
     body('code').isInt({ min: 1, max: 999 }).withMessage('Codice deve essere tra 1 e 999'),
