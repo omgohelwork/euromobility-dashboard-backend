@@ -1,24 +1,32 @@
 import mongoose from 'mongoose';
 
+/** Cached connection promise so serverless (e.g. Vercel) reuses one connection per instance. */
+let connPromise = null;
+
 /**
- * Connect to MongoDB. Uses MONGODB_URI from .env.local.
- * No seeders - database starts empty.
+ * Connect to MongoDB. Uses MONGODB_URI from env.
+ * Safe to call multiple times; reuses existing connection.
  */
 export async function connectDB() {
+  if (mongoose.connection.readyState === 1) return;
+  if (connPromise) return connPromise;
+
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dashboard_osservatorio';
-  const options = {
-    // Ensure UTF-8 and proper handling
-    family: 4,
-  };
-  try {
-    await mongoose.connect(uri, options);
+  const options = { family: 4 };
+
+  connPromise = mongoose.connect(uri, options).then(() => {
     console.log('MongoDB connected');
-  } catch (err) {
+    return mongoose.connection;
+  }).catch((err) => {
+    connPromise = null;
     console.error('MongoDB connection error:', err.message);
-    process.exit(1);
-  }
+    throw err;
+  });
+
+  return connPromise;
 }
 
 mongoose.connection.on('disconnected', () => {
+  connPromise = null;
   console.log('MongoDB disconnected');
 });

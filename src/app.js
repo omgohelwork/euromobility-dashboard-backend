@@ -8,10 +8,21 @@ import dataRoutes from './routes/dataRoutes.js';
 import yearRoutes from './routes/yearRoutes.js';
 import complexIndicatorRoutes from './routes/complexIndicatorRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { connectDB } from './config/db.js';
 
 const app = express();
 
 app.use(cors());
+
+// Ensure DB is connected before any route (required for Vercel serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
