@@ -10,6 +10,7 @@ router.post(
   '/',
   [
     body('name').trim().notEmpty().withMessage('Nome obbligatorio'),
+    body('order').optional().isInt({ min: 1 }).withMessage('order deve essere intero >= 1'),
     body('stackedIndicators').optional().isArray(),
     body('stackedIndicators.*.indicatorId').optional().isMongoId(),
     body('stackedIndicators.*.order').optional().isInt({ min: 0 }),
@@ -18,6 +19,12 @@ router.post(
   complexIndicatorController.create
 );
 
+router.get(
+  '/:id/stack-data',
+  param('id').isMongoId().withMessage('ID non valido'),
+  validate,
+  complexIndicatorController.getStackData
+);
 router.get(
   '/:id',
   param('id').isMongoId().withMessage('ID non valido'),
@@ -30,6 +37,7 @@ router.patch(
   [
     param('id').isMongoId().withMessage('ID non valido'),
     body('name').optional().trim().notEmpty(),
+    body('order').optional().isInt({ min: 1 }).withMessage('order deve essere intero >= 1'),
     body('stackedIndicators').optional().isArray(),
   ],
   validate,

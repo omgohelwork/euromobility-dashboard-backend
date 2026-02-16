@@ -19,6 +19,11 @@ const complexIndicatorSchema = new mongoose.Schema(
       required: [true, 'Nome indicatore complesso obbligatorio'],
       trim: true,
     },
+    order: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
     stackedIndicators: [stackedIndicatorSchema],
   },
   { timestamps: true }
