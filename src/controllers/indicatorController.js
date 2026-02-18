@@ -67,6 +67,24 @@ export async function getOne(req, res, next) {
   }
 }
 
+/** GET /api/indicators/:id/upload-hint – id, code, name and filename format for admin "view indicator id/prefix" (read-only). */
+export async function getUploadHint(req, res, next) {
+  try {
+    const ind = await Indicator.findById(req.params.id).select('_id code name').lean();
+    if (!ind) return notFound(res, 'Indicatore');
+    const codePadded = String(ind.code).padStart(3, '0');
+    return success(res, {
+      id: ind._id,
+      code: ind.code,
+      name: ind.name,
+      filenameHint: `${codePadded} - NomeFile.csv`,
+      filenameExample: `${codePadded} - ${(ind.name || 'Nome').replace(/[<>:"/\\|?*]/g, '').slice(0, 30)}.csv`,
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
 export async function update(req, res, next) {
   try {
     const body = { ...req.body };

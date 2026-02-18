@@ -31,6 +31,12 @@ router.post(
 );
 
 router.get(
+  '/:id/upload-hint',
+  param('id').isMongoId().withMessage('ID non valido'),
+  validate,
+  indicatorController.getUploadHint
+);
+router.get(
   '/:id',
   param('id').isMongoId().withMessage('ID non valido'),
   validate,
