@@ -1,7 +1,7 @@
 import Indicator from '../models/Indicator.js';
 import Data from '../models/Data.js';
 import { success, notFound, error } from '../utils/ApiResponse.js';
-import { recalculateRangesForIndicator } from '../services/uploadService.js';
+import { recalculateRangesForIndicator, recalculateRangesForIndicatorByValue } from '../services/uploadService.js';
 
 export async function list(req, res, next) {
   try {
@@ -35,12 +35,16 @@ export async function create(req, res, next) {
     const existing = await Indicator.findOne({ code: codeNum });
     if (existing) return error(res, 'Codice indicatore già esistente', 409);
 
+    const orderNum = Number(order) ?? 0;
+    const orderConflict = await Indicator.findOne({ categoryId, order: orderNum });
+    if (orderConflict) return error(res, "L'ordine deve essere univoco nella stessa categoria: un altro indicatore ha già questo ordine.", 409);
+
     const doc = await Indicator.create({
       code: codeNum,
       name: String(name).trim(),
       categoryId,
       unit: String(unit || '').trim(),
-      order: Number(order) || 0,
+      order: orderNum,
       numeroCifre: String(numeroCifre ?? '0').trim(),
       invertScale: Boolean(invertScale),
       rangeMode: rangeMode || 'equalCount',
@@ -77,6 +81,18 @@ export async function update(req, res, next) {
       const existing = await Indicator.findOne({ code: codeNum, _id: { $ne: req.params.id } });
       if (existing) return error(res, 'Codice indicatore già usato da un altro indicatore', 409);
       body.code = codeNum;
+    }
+    if (body.order !== undefined) {
+      const orderNum = Number(body.order);
+      const categoryIdForOrder = body.categoryId != null ? body.categoryId : (await Indicator.findById(req.params.id).select('categoryId').lean())?.categoryId;
+      if (categoryIdForOrder) {
+        const orderConflict = await Indicator.findOne({
+          categoryId: categoryIdForOrder,
+          order: orderNum,
+          _id: { $ne: req.params.id },
+        });
+        if (orderConflict) return error(res, "L'ordine deve essere univoco nella stessa categoria: un altro indicatore ha già questo ordine.", 409);
+      }
     }
     const ind = await Indicator.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
     if (!ind) return notFound(res, 'Indicatore');
@@ -141,6 +157,20 @@ export async function recalculate(req, res, next) {
   }
 }
 
+/** POST /api/indicators/:id/recalculate-by-value – recalc ranges using value-based quartile logic (max-min)/4. */
+export async function recalculateByValue(req, res, next) {
+  try {
+    const ind = await Indicator.findById(req.params.id);
+    if (!ind) return notFound(res, 'Indicatore');
+    const ranges = await recalculateRangesForIndicatorByValue(ind);
+    ind.ranges = ranges;
+    await ind.save();
+    return success(res, ind);
+  } catch (e) {
+    next(e);
+  }
+}
+
 /** POST /api/indicators/recalculate-bulk – recalc ranges for many indicators (e.g. after upload). */
 export async function recalculateBulk(req, res, next) {
   try {
@@ -158,6 +188,50 @@ export async function recalculateBulk(req, res, next) {
     });
     const updated = (await Promise.all(promises)).filter(Boolean);
     return success(res, { updated: updated.length, indicatorIds: updated });
+  } catch (e) {
+    next(e);
+  }
+}
+
+/** POST /api/indicators/recalculate-all – recalc ranges for all indicators that have data. */
+export async function recalculateAll(req, res, next) {
+  try {
+    const indicatorIds = await Data.distinct('indicatorId');
+    if (indicatorIds.length === 0) {
+      return success(res, { updated: 0, message: 'Nessun indicatore con dati da ricalcolare' });
+    }
+    let updated = 0;
+    for (const id of indicatorIds) {
+      const ind = await Indicator.findById(id);
+      if (!ind) continue;
+      const ranges = await recalculateRangesForIndicator(ind);
+      ind.ranges = ranges;
+      await ind.save();
+      updated++;
+    }
+    return success(res, { updated, message: `Ranges ricalcolati per ${updated} indicatori` });
+  } catch (e) {
+    next(e);
+  }
+}
+
+/** POST /api/indicators/recalculate-by-value-all – recalc ranges by value (quartile logic) for all indicators that have data. */
+export async function recalculateByValueAll(req, res, next) {
+  try {
+    const indicatorIds = await Data.distinct('indicatorId');
+    if (indicatorIds.length === 0) {
+      return success(res, { updated: 0, message: 'Nessun indicatore con dati da ricalcolare' });
+    }
+    let updated = 0;
+    for (const id of indicatorIds) {
+      const ind = await Indicator.findById(id);
+      if (!ind) continue;
+      const ranges = await recalculateRangesForIndicatorByValue(ind);
+      ind.ranges = ranges;
+      await ind.save();
+      updated++;
+    }
+    return success(res, { updated, message: `Ranges (per valore) ricalcolati per ${updated} indicatori` });
   } catch (e) {
     next(e);
   }

@@ -3,7 +3,7 @@ import City from '../models/City.js';
 import YearControl from '../models/YearControl.js';
 import Data from '../models/Data.js';
 import { parseCodeFromFilename } from '../utils/parseCsvFilename.js';
-import { processOneCsvToOps, normalizeCityName } from '../services/uploadService.js';
+import { processOneCsvToOps, normalizeCityName, recalculateRangesForIndicator } from '../services/uploadService.js';
 import { success, error } from '../utils/ApiResponse.js';
 
 /**
@@ -11,8 +11,9 @@ import { success, error } from '../utils/ApiResponse.js';
  * Multer puts files in req.files (array). Each file: { originalname, buffer }.
  * Validate: each filename = "001 - Name.csv", indicator with that code exists.
  * Process each file: overwrite data for that indicator.
- * Range recalculation is NOT done here (avoids Vercel timeout). Frontend should call
- * POST /api/indicators/recalculate-bulk with the returned indicatorIds after upload.
+ * Ranges: only calculated when the indicator has no ranges yet (first-time upload).
+ * If the indicator already has ranges, they are left unchanged. Admin can use
+ * POST /api/indicators/:id/recalculate or recalculate-bulk to "reset by grouping".
  */
 export async function upload(req, res, next) {
   try {
@@ -92,12 +93,23 @@ export async function upload(req, res, next) {
       await YearControl.insertMany(uploadYears.map((year) => ({ year, enabled: true })));
     }
 
+    // First-time only: set ranges when indicator has none (e.g. empty array). Never overwrite existing ranges.
+    const indicatorsWithEmptyRanges = await Indicator.find({
+      _id: { $in: [...indicatorsUpdated] },
+      $or: [{ ranges: { $exists: false } }, { ranges: { $size: 0 } }],
+    });
+    for (const ind of indicatorsWithEmptyRanges) {
+      const ranges = await recalculateRangesForIndicator(ind);
+      ind.ranges = ranges;
+      await ind.save();
+    }
+
     const indicatorIds = [...indicatorsUpdated];
     return success(res, {
       message: `Caricati ${files.length} file`,
       files: results,
       indicatorIds,
-      hint: 'Chiamare POST /api/indicators/recalculate-bulk con { indicatorIds } per aggiornare i colori (ranges).',
+      rangesSetForFirstTime: indicatorsWithEmptyRanges.length,
     }, 201);
   } catch (e) {
     next(e);

@@ -13,6 +13,8 @@ router.post(
   validate,
   indicatorController.recalculateBulk
 );
+router.post('/recalculate-all', indicatorController.recalculateAll);
+router.post('/recalculate-by-value-all', indicatorController.recalculateByValueAll);
 router.post(
   '/',
   [
@@ -81,6 +83,12 @@ router.post(
   param('id').isMongoId().withMessage('ID non valido'),
   validate,
   indicatorController.recalculate
+);
+router.post(
+  '/:id/recalculate-by-value',
+  param('id').isMongoId().withMessage('ID non valido'),
+  validate,
+  indicatorController.recalculateByValue
 );
 
 export default router;

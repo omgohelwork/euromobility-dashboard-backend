@@ -5,7 +5,7 @@ import City from '../models/City.js';
 import Indicator from '../models/Indicator.js';
 import YearControl from '../models/YearControl.js';
 import { parseCodeFromFilename } from '../utils/parseCsvFilename.js';
-import { calculateEqualCountRanges, calculateEqualIntervalRanges, getValuesForYear } from './rangeService.js';
+import { calculateEqualCountRanges, calculateEqualIntervalRanges, calculateValueBasedRanges, getValuesForYear } from './rangeService.js';
 
 /** Normalize parsed rows into { headers, rows } shape. Shared by CSV and XLSX. */
 function normalizeToRows(records) {
@@ -222,4 +222,28 @@ export async function recalculateRangesForIndicator(indicator) {
   }
 
   return ranges;
+}
+
+/**
+ * Recalculate ranges using value-based logic: quartile = (max-min)/4, 4 buckets with step between boundaries.
+ * Uses latest year data. step = 0.001 if indicator.unit contains '%', else 0.01.
+ */
+export async function recalculateRangesForIndicatorByValue(indicator) {
+  const dataDocs = await Data.find({ indicatorId: indicator._id }).lean();
+  const yearKeys = new Set();
+  dataDocs.forEach((d) => {
+    if (d.values && typeof d.values === 'object') {
+      Object.keys(d.values).forEach((k) => yearKeys.add(k));
+    }
+  });
+  const sortedYears = [...yearKeys].filter((y) => /^\d{4}$/.test(y)).map(Number).sort((a, b) => b - a);
+  const latestYear = sortedYears[0];
+  if (latestYear === undefined) {
+    return indicator.ranges || [];
+  }
+  const yearKey = String(latestYear);
+  const values = getValuesForYear(dataDocs, yearKey);
+  const unit = String(indicator.unit || '').toLowerCase();
+  const step = unit.includes('%') ? 0.001 : 0.01;
+  return calculateValueBasedRanges(values, indicator.invertScale, step);
 }

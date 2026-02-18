@@ -100,6 +100,42 @@ export function calculateEqualIntervalRanges(values, invertScale = false) {
 }
 
 /**
+ * Value-based: quartile = (max - min) / 4; four ranges with a small step between boundaries.
+ * Range 1: [max - quartile, max]
+ * Range 2: [max - 2*quartile, max - quartile - step]
+ * Range 3: [max - 3*quartile, max - 2*quartile - step]
+ * Range 4: [min, max - 3*quartile - step]
+ * step: 0.01 for number, 0.001 for percent (to avoid overlap between buckets).
+ */
+export function calculateValueBasedRanges(values, invertScale = false, step = 0.01) {
+  const nums = values
+    .filter((v) => v !== null && v !== undefined && Number.isFinite(Number(v)))
+    .map(Number);
+
+  if (nums.length === 0) {
+    const colors = getColors(invertScale);
+    return [
+      { min: 0, max: 0, color: colors[0] },
+      { min: 0, max: 0, color: colors[1] },
+      { min: 0, max: 0, color: colors[2] },
+      { min: 0, max: 0, color: colors[3] },
+    ];
+  }
+
+  const min = Math.min(...nums);
+  const max = Math.max(...nums);
+  const quartile = (max - min) / 4 || 0;
+  const colors = getColors(invertScale);
+
+  return [
+    { min: max - quartile, max, color: colors[0] },
+    { min: max - 2 * quartile, max: max - quartile - step, color: colors[1] },
+    { min: max - 3 * quartile, max: max - 2 * quartile - step, color: colors[2] },
+    { min, max: max - 3 * quartile - step, color: colors[3] },
+  ];
+}
+
+/**
  * Get all values for an indicator (from Data documents) for a given year.
  */
 export function getValuesForYear(dataDocs, yearKey) {
