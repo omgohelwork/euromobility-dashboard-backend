@@ -17,6 +17,19 @@ function getColors(invertScale) {
   return order.map((k) => DEFAULT_COLORS[k]);
 }
 
+/** Round for range display: 2 decimals to avoid floating-point noise in API. */
+function roundRange(value, decimals = 2) {
+  if (value == null || !Number.isFinite(value)) return value;
+  const p = Math.pow(10, decimals);
+  return Math.round(value * p) / p;
+}
+
+/** Round and clamp to >= 0 so range boundaries are never negative (e.g. -0.01 becomes 0). */
+function roundRangeNonNegative(value, decimals = 2) {
+  const r = roundRange(value, decimals);
+  return r != null && Number.isFinite(r) ? Math.max(0, r) : 0;
+}
+
 /**
  * Group sizes for equal count: 13-13-12-12 for 50 cities; otherwise split as even as possible.
  * Values are sorted DESC (highest first), so group 1 = best, group 4 = worst.
@@ -34,9 +47,10 @@ function getEqualCountSizes(n) {
 }
 
 /**
- * equalCount: sort descending (year-wise), split 13-13-12-12 (for 50), min/max per group, assign colors.
+ * equalCount: sort descending, split 13-13-12-12 (for 50), min/max per group.
+ * Set max of lower range = min of next higher range - 0.01. Round to 2 decimals.
  */
-export function calculateEqualCountRanges(values, invertScale = false) {
+export function calculateEqualCountRanges(values, invertScale = false, step = 0.01) {
   const nums = values
     .filter((v) => v !== null && v !== undefined && Number.isFinite(Number(v)))
     .map(Number)
@@ -65,14 +79,23 @@ export function calculateEqualCountRanges(values, invertScale = false) {
     i += size;
   }
 
+  groups[1].max = roundRangeNonNegative(groups[0].min - step);
+  groups[2].max = roundRangeNonNegative(groups[1].min - step);
+  groups[3].max = roundRangeNonNegative(groups[2].min - step);
+
   const colors = getColors(invertScale);
-  return groups.map((g, idx) => ({ ...g, color: colors[idx] }));
+  return groups.map((g, idx) => ({
+    min: roundRangeNonNegative(g.min),
+    max: roundRangeNonNegative(g.max),
+    color: colors[idx],
+  }));
 }
 
 /**
  * equalInterval: divide (max - min) into 4 equal intervals.
+ * Set max of lower range = min of next higher - gapStep. Round to 2 decimals.
  */
-export function calculateEqualIntervalRanges(values, invertScale = false) {
+export function calculateEqualIntervalRanges(values, invertScale = false, gapStep = 0.01) {
   const nums = values
     .filter((v) => v !== null && v !== undefined && Number.isFinite(Number(v)))
     .map(Number);
@@ -91,21 +114,21 @@ export function calculateEqualIntervalRanges(values, invertScale = false) {
   const max = Math.max(...nums);
   const step = (max - min) / 4 || 0;
   const colors = getColors(invertScale);
+  const r0min = min + 3 * step;
+  const r1min = min + 2 * step;
+  const r2min = min + step;
   return [
-    { min, max: min + step, color: colors[0] },
-    { min: min + step, max: min + 2 * step, color: colors[1] },
-    { min: min + 2 * step, max: min + 3 * step, color: colors[2] },
-    { min: min + 3 * step, max: max, color: colors[3] },
+    { min: roundRangeNonNegative(r0min), max: roundRangeNonNegative(max), color: colors[0] },
+    { min: roundRangeNonNegative(r1min), max: roundRangeNonNegative(r0min - gapStep), color: colors[1] },
+    { min: roundRangeNonNegative(r2min), max: roundRangeNonNegative(r1min - gapStep), color: colors[2] },
+    { min: roundRangeNonNegative(min), max: roundRangeNonNegative(r2min - gapStep), color: colors[3] },
   ];
 }
 
 /**
- * Value-based: quartile = (max - min) / 4; four ranges with a small step between boundaries.
- * Range 1: [max - quartile, max]
- * Range 2: [max - 2*quartile, max - quartile - step]
- * Range 3: [max - 3*quartile, max - 2*quartile - step]
- * Range 4: [min, max - 3*quartile - step]
- * step: 0.01 for number, 0.001 for percent (to avoid overlap between buckets).
+ * Value-based: quartile = (max - min) / 4; four ranges with step (0.01) between boundaries.
+ * Range 1: [max - quartile, max], Range 2: [max - 2*quartile, max - quartile - step], etc.
+ * Min/max from all years. step = 0.01 for both numbers and percent. Round to 2 decimals.
  */
 export function calculateValueBasedRanges(values, invertScale = false, step = 0.01) {
   const nums = values
@@ -128,10 +151,10 @@ export function calculateValueBasedRanges(values, invertScale = false, step = 0.
   const colors = getColors(invertScale);
 
   return [
-    { min: max - quartile, max, color: colors[0] },
-    { min: max - 2 * quartile, max: max - quartile - step, color: colors[1] },
-    { min: max - 3 * quartile, max: max - 2 * quartile - step, color: colors[2] },
-    { min, max: max - 3 * quartile - step, color: colors[3] },
+    { min: roundRangeNonNegative(max - quartile), max: roundRangeNonNegative(max), color: colors[0] },
+    { min: roundRangeNonNegative(max - 2 * quartile), max: roundRangeNonNegative(max - quartile - step), color: colors[1] },
+    { min: roundRangeNonNegative(max - 3 * quartile), max: roundRangeNonNegative(max - 2 * quartile - step), color: colors[2] },
+    { min: roundRangeNonNegative(min), max: roundRangeNonNegative(max - 3 * quartile - step), color: colors[3] },
   ];
 }
 
@@ -142,4 +165,22 @@ export function getValuesForYear(dataDocs, yearKey) {
   return dataDocs
     .map((d) => d.values && d.values[yearKey])
     .filter((v) => v !== undefined);
+}
+
+/**
+ * Get all values from all years (for min/max and range calculation across all years).
+ */
+export function getValuesForAllYears(dataDocs) {
+  const values = [];
+  for (const d of dataDocs) {
+    if (d.values && typeof d.values === 'object') {
+      for (const k of Object.keys(d.values)) {
+        if (/^\d{4}$/.test(k)) {
+          const v = d.values[k];
+          if (v !== undefined) values.push(v);
+        }
+      }
+    }
+  }
+  return values;
 }
