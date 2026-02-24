@@ -20,66 +20,64 @@ export const categories = [
 export const indicators = [
 
   // Indicatori demografici
-  { code: 40, name: 'Popolazione', categoryName: 'Indicatori demografici', unit: 'abitanti', order: 1 },
-  { code: 21, name: 'Densità di popolazione', categoryName: 'Indicatori demografici', unit: 'abitanti/km²', order: 2 },
+  { code: 40, name: 'Popolazione', categoryName: 'Indicatori demografici', unit: 'abitanti', order: 1, numero_di_decimali: 0 },
+  { code: 21, name: 'Densità di popolazione', categoryName: 'Indicatori demografici', unit: 'abitanti/km²', order: 2, numero_di_decimali: 2 },
 
   // Parchi circolanti
-  { code: 1, name: 'Autovetture a gas', categoryName: 'Parchi circolanti', unit: '%', order: 1 },
-  { code: 2, name: 'Autovetture a GPL', categoryName: 'Parchi circolanti', unit: '%', order: 2 },
-  { code: 3, name: 'Autovetture a metano', categoryName: 'Parchi circolanti', unit: '%', order: 3 },
-  { code: 4, name: 'Autovetture elettriche', categoryName: 'Parchi circolanti', unit: '%', order: 4 },
-  { code: 20, name: 'Densità di autovetture', categoryName: 'Parchi circolanti', unit: 'veicoli/km²', order: 5 },
-  { code: 28, name: 'Indice di motorizzazione autovetture', categoryName: 'Parchi circolanti', unit: 'veicoli/100 abitanti', order: 6 },
-  { code: 29, name: 'Indice di motorizzazione motocicli', categoryName: 'Parchi circolanti', unit: 'veicoli/100 abitanti', order: 7 },
-  { code: 12, name: 'Autovetture ibride', categoryName: 'Parchi circolanti', unit: '%', order: 8 },
+  { code: 1, name: 'Autovetture a gas', categoryName: 'Parchi circolanti', unit: '%', order: 1, numero_di_decimali: 2 },
+  { code: 2, name: 'Autovetture a GPL', categoryName: 'Parchi circolanti', unit: '%', order: 2, numero_di_decimali: 2 },
+  { code: 3, name: 'Autovetture a metano', categoryName: 'Parchi circolanti', unit: '%', order: 3, numero_di_decimali: 2 },
+  { code: 4, name: 'Autovetture elettriche', categoryName: 'Parchi circolanti', unit: '%', order: 4, numero_di_decimali: 2 },
+  { code: 20, name: 'Densità di autovetture', categoryName: 'Parchi circolanti', unit: 'veicoli/km²', order: 5, numero_di_decimali: 2 },
+  { code: 28, name: 'Indice di motorizzazione autovetture', categoryName: 'Parchi circolanti', unit: 'veicoli/100 abitanti', order: 6, numero_di_decimali: 2},
+  { code: 29, name: 'Indice di motorizzazione motocicli', categoryName: 'Parchi circolanti', unit: 'veicoli/100 abitanti', order: 7, numero_di_decimali: 2 },
+  { code: 12, name: 'Autovetture ibride', categoryName: 'Parchi circolanti', unit: '%', order: 8, numero_di_decimali: 2 },
 
   // Trasporto pubblico
-  { code: 43, name: 'Trasporto Pubblico Locale - Domanda', categoryName: 'Trasporto pubblico', unit: 'passeggeri/abitanti', order: 1 },
-  { code: 44, name: 'Trasporto Pubblico Locale - Offerta', categoryName: 'Trasporto pubblico', unit: 'posti*km/abitanti', order: 2 },
+  { code: 43, name: 'Trasporto Pubblico Locale - Domanda', categoryName: 'Trasporto pubblico', unit: 'passeggeri/abitanti', order: 1, numero_di_decimali: 1 },
+  { code: 44, name: 'Trasporto Pubblico Locale - Offerta', categoryName: 'Trasporto pubblico', unit: 'posti*km/abitanti', order: 2, numero_di_decimali: 0 },
 
   // Ciclabilità
-  { code: 19, name: 'Corsie ciclabili', categoryName: 'Ciclabilità', unit: 'km', order: 1 },
+  { code: 19, name: 'Corsie ciclabili', categoryName: 'Ciclabilità', unit: 'km', order: 1, numero_di_decimali: 2 },
 
   // Incidentalità
-  { code: 26, name: 'Indice di incidentalità', categoryName: 'Incidentalità', unit: 'incidenti/100 abitanti', order: 1 },
-  { code: 27, name: 'Indice di mortalità', categoryName: 'Incidentalità', unit: 'morti/100 incidenti', order: 2 },
+  { code: 26, name: 'Indice di incidentalità', categoryName: 'Incidentalità', unit: 'incidenti/100 abitanti', order: 1, numero_di_decimali: 2},
+  { code: 27, name: 'Indice di mortalità', categoryName: 'Incidentalità', unit: 'morti/100 incidenti', order: 2, numero_di_decimali: 2 },
 
   // Sharing
-  { code: 13, name: 'Bike sharing - Biciclette su popolazione', categoryName: 'Sharing', unit: 'biciclette/10.000 abitanti', order: 1 },
-  { code: 14, name: 'Bike sharing - Biciclette', categoryName: 'Sharing', unit: 'numero biciclette', order: 2 },
-  { code: 15, name: 'Car sharing - Auto su popolazione', categoryName: 'Sharing', unit: 'auto/10.000 abitanti', order: 3 },
-  { code: 16, name: 'Car sharing - Auto', categoryName: 'Sharing', unit: 'numero auto', order: 4 },
-  { code: 30, name: 'Monopattini in sharing - Monopattini su popolazione', categoryName: 'Sharing', unit: 'monopattini/10.000 abitanti', order: 5 },
-  { code: 31, name: 'Monopattini in sharing - Monopattini', categoryName: 'Sharing', unit: 'numero monopattini', order: 6 },
-  { code: 41, name: 'Scooter sharing - Scooter su popolazione', categoryName: 'Sharing', unit: 'scooter/10.000 abitanti', order: 7 },
-  { code: 42, name: 'Scooter sharing - Scooter', categoryName: 'Sharing', unit: 'numero scooter', order: 8 },
+  { code: 13, name: 'Bike sharing - Biciclette su popolazione', categoryName: 'Sharing', unit: 'biciclette/10.000 abitanti', order: 1, numero_di_decimali: 2 },
+  { code: 14, name: 'Bike sharing - Biciclette', categoryName: 'Sharing', unit: 'numero biciclette', order: 2, numero_di_decimali: 0 },
+  { code: 15, name: 'Car sharing - Auto su popolazione', categoryName: 'Sharing', unit: 'auto/10.000 abitanti', order: 3, numero_di_decimali: 2 },
+  { code: 16, name: 'Car sharing - Auto', categoryName: 'Sharing', unit: 'numero auto', order: 4, numero_di_decimali: 0 },
+  { code: 30, name: 'Monopattini in sharing - Monopattini su popolazione', categoryName: 'Sharing', unit: 'monopattini/10.000 abitanti', order: 5, numero_di_decimali: 2 },
+  { code: 31, name: 'Monopattini in sharing - Monopattini', categoryName: 'Sharing', unit: 'numero monopattini', order: 6, numero_di_decimali: 0 },
+  { code: 41, name: 'Scooter sharing - Scooter su popolazione', categoryName: 'Sharing', unit: 'scooter/10.000 abitanti', order: 7, numero_di_decimali: 2 },
+  { code: 42, name: 'Scooter sharing - Scooter', categoryName: 'Sharing', unit: 'numero scooter', order: 8, numero_di_decimali: 0 },
 
   // Qualità aria
-  { code: 17, name: 'Concentrazione media annuale di NO2', categoryName: 'Qualità aria', unit: 'µg/m³', order: 1 },
-  { code: 18, name: 'Concentrazione media annuale di PM10', categoryName: 'Qualità aria', unit: 'µg/m³', order: 2 },
-  { code: 25, name: 'Giorni di superamento del limite di PM10', categoryName: 'Qualità aria', unit: 'giorni', order: 3 },
-  { code: 39, name: 'Ore di superamento del limite di NO2', categoryName: 'Qualità aria', unit: 'ore', order: 4 },
-  { code: 22, name: 'Fattore di emissione di CO2 del veicolo medio', categoryName: 'Qualità aria', unit: 'g/km', order: 5 },
-
-{ code: 23, name: 'Fattore di emissione di NOx del veicolo medio', categoryName: 'Qualità aria', unit: 'g/km', order: 6 },
-
-{ code: 24, name: 'Fattore di emissione di PM10 del veicolo medio', categoryName: 'Qualità aria', unit: 'g/km', order: 7 },
+  { code: 17, name: 'Concentrazione media annuale di NO2', categoryName: 'Qualità aria', unit: 'µg/m³', order: 1, numero_di_decimali: 0 },
+  { code: 18, name: 'Concentrazione media annuale di PM10', categoryName: 'Qualità aria', unit: 'µg/m³', order: 2, numero_di_decimali: 0 },
+  { code: 25, name: 'Giorni di superamento del limite di PM10', categoryName: 'Qualità aria', unit: 'giorni', order: 3, numero_di_decimali: 0 },
+  { code: 39, name: 'Ore di superamento del limite di NO2', categoryName: 'Qualità aria', unit: 'ore', order: 4, numero_di_decimali: 0 },
+  { code: 22, name: 'Fattore di emissione di CO2 del veicolo medio', categoryName: 'Qualità aria', unit: 'g/km', order: 5, numero_di_decimali: 1 },
+  { code: 23, name: 'Fattore di emissione di NOx del veicolo medio', categoryName: 'Qualità aria', unit: 'g/km', order: 6, numero_di_decimali: 2 },
+  { code: 24, name: 'Fattore di emissione di PM10 del veicolo medio', categoryName: 'Qualità aria', unit: 'g/km', order: 7, numero_di_decimali: 2 },
 
   // Standard emissivo
-  { code: 5, name: 'Autovetture Euro 0', categoryName: 'Standard emissivo', unit: '%', order: 1 },
-  { code: 6, name: 'Autovetture Euro 1', categoryName: 'Standard emissivo', unit: '%', order: 2 },
-  { code: 7, name: 'Autovetture Euro 2', categoryName: 'Standard emissivo', unit: '%', order: 3 },
-  { code: 8, name: 'Autovetture Euro 3', categoryName: 'Standard emissivo', unit: '%', order: 4 },
-  { code: 9, name: 'Autovetture Euro 4', categoryName: 'Standard emissivo', unit: '%', order: 5 },
-  { code: 10, name: 'Autovetture Euro 5', categoryName: 'Standard emissivo', unit: '%', order: 6 },
-  { code: 11, name: 'Autovetture Euro 6', categoryName: 'Standard emissivo', unit: '%', order: 7 },
-  { code: 32, name: 'Motocicli Euro 0', categoryName: 'Standard emissivo', unit: '%', order: 8 },
-  { code: 33, name: 'Motocicli Euro 1', categoryName: 'Standard emissivo', unit: '%', order: 9 },
-  { code: 34, name: 'Motocicli Euro 2', categoryName: 'Standard emissivo', unit: '%', order: 10 },
-  { code: 35, name: 'Motocicli Euro 3', categoryName: 'Standard emissivo', unit: '%', order: 11 },
-  { code: 36, name: 'Motocicli Euro 4', categoryName: 'Standard emissivo', unit: '%', order: 12 },
-  { code: 37, name: 'Motocicli Euro 5', categoryName: 'Standard emissivo', unit: '%', order: 13 },
-  { code: 38, name: 'Motocicli Euro 6', categoryName: 'Standard emissivo', unit: '%', order: 14 },
+  { code: 5, name: 'Autovetture Euro 0', categoryName: 'Standard emissivo', unit: '%', order: 1, numero_di_decimali: 2 },
+  { code: 6, name: 'Autovetture Euro 1', categoryName: 'Standard emissivo', unit: '%', order: 2, numero_di_decimali: 2 },
+  { code: 7, name: 'Autovetture Euro 2', categoryName: 'Standard emissivo', unit: '%', order: 3, numero_di_decimali: 2 },
+  { code: 8, name: 'Autovetture Euro 3', categoryName: 'Standard emissivo', unit: '%', order: 4, numero_di_decimali: 2 },
+  { code: 9, name: 'Autovetture Euro 4', categoryName: 'Standard emissivo', unit: '%', order: 5, numero_di_decimali: 2 },
+  { code: 10, name: 'Autovetture Euro 5', categoryName: 'Standard emissivo', unit: '%', order: 6, numero_di_decimali: 2 },
+  { code: 11, name: 'Autovetture Euro 6', categoryName: 'Standard emissivo', unit: '%', order: 7, numero_di_decimali: 2 },
+  { code: 32, name: 'Motocicli Euro 0', categoryName: 'Standard emissivo', unit: '%', order: 8, numero_di_decimali: 2 },
+  { code: 33, name: 'Motocicli Euro 1', categoryName: 'Standard emissivo', unit: '%', order: 9, numero_di_decimali: 2 },
+  { code: 34, name: 'Motocicli Euro 2', categoryName: 'Standard emissivo', unit: '%', order: 10, numero_di_decimali: 2 },
+  { code: 35, name: 'Motocicli Euro 3', categoryName: 'Standard emissivo', unit: '%', order: 11, numero_di_decimali: 2 },
+  { code: 36, name: 'Motocicli Euro 4', categoryName: 'Standard emissivo', unit: '%', order: 12, numero_di_decimali: 2 },
+  { code: 37, name: 'Motocicli Euro 5', categoryName: 'Standard emissivo', unit: '%', order: 13, numero_di_decimali: 2 },
+  { code: 38, name: 'Motocicli Euro 6', categoryName: 'Standard emissivo', unit: '%', order: 14, numero_di_decimali: 2 },
 
 ];
 

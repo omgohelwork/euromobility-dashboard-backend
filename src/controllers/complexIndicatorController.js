@@ -3,6 +3,7 @@ import Data from '../models/Data.js';
 import City from '../models/City.js';
 import YearControl from '../models/YearControl.js';
 import { success, notFound, error } from '../utils/ApiResponse.js';
+import { roundValue } from '../utils/roundValue.js';
 
 /** Default segment colors for stack chart (used if indicator has no ranges). */
 const STACK_COLORS = ['#3b82f6', '#ef4444', '#f97316', '#22c55e', '#06b6d4', '#8b5cf6'];
@@ -98,7 +99,7 @@ export async function getStackData(req, res, next) {
     const yearParam = req.query.year ? parseInt(req.query.year, 10) : null;
 
     const complex = await ComplexIndicator.findById(complexId)
-      .populate('stackedIndicators.indicatorId', 'name code unit ranges')
+      .populate('stackedIndicators.indicatorId', 'name code unit ranges numero_di_decimali')
       .lean();
     if (!complex) return notFound(res, 'Indicatore complesso');
 
@@ -143,10 +144,13 @@ export async function getStackData(req, res, next) {
     }
 
     const labels = cities.map((c) => c.name);
+    const decimalsFor = (ind) => (ind && ind.numero_di_decimali != null ? Math.min(2, Math.max(0, Math.floor(Number(ind.numero_di_decimali)))) : 0);
     const series = stacked.map((s, idx) => {
       const ind = s.indicatorId;
       const id = ind._id ?? ind;
-      const values = cities.map((c) => valueMap.get(`${String(id)}-${String(c._id)}`) ?? null);
+      const decimals = decimalsFor(ind);
+      const rawValues = cities.map((c) => valueMap.get(`${String(id)}-${String(c._id)}`) ?? null);
+      const values = rawValues.map((v) => (v != null ? roundValue(v, decimals) : null));
       const color = ind.ranges && ind.ranges[0] && ind.ranges[0].color
         ? ind.ranges[0].color
         : STACK_COLORS[idx % STACK_COLORS.length];

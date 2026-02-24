@@ -42,6 +42,12 @@ const indicatorSchema = new mongoose.Schema(
       default: '0',
       trim: true,
     },
+    numero_di_decimali: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 2,
+    },
     invertScale: {
       type: Boolean,
       default: false,

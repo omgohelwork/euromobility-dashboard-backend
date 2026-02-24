@@ -45,12 +45,14 @@ export async function seedDatabase() {
   for (const ind of indicators) {
     const categoryId = categoryByName.get(ind.categoryName);
     if (!categoryId) continue;
+    const decimals = ind.numero_di_decimali != null ? Math.min(2, Math.max(0, Math.floor(Number(ind.numero_di_decimali)))) : 0;
     indicatorsToInsert.push({
       code: ind.code,
       name: ind.name,
       categoryId,
       unit: ind.unit || '',
       order: ind.order ?? 0,
+      numero_di_decimali: decimals,
       invertScale: false,
       rangeMode: 'equalCount',
       ranges: [],

@@ -27,7 +27,7 @@ export async function idsWithData(req, res, next) {
 
 export async function create(req, res, next) {
   try {
-    const { code, name, categoryId, unit, order, numeroCifre, invertScale, rangeMode, ranges } = req.body;
+    const { code, name, categoryId, unit, order, numeroCifre, numero_di_decimali, invertScale, rangeMode, ranges } = req.body;
     const codeNum = Number(code);
     if (!Number.isFinite(codeNum) || codeNum < 1 || codeNum > 999) {
       return error(res, 'Codice indicatore deve essere un numero tra 1 e 999', 400);
@@ -39,6 +39,7 @@ export async function create(req, res, next) {
     const orderConflict = await Indicator.findOne({ categoryId, order: orderNum });
     if (orderConflict) return error(res, "L'ordine deve essere univoco nella stessa categoria: un altro indicatore ha già questo ordine.", 409);
 
+    const decimals = numero_di_decimali != null ? Math.min(2, Math.max(0, Math.floor(Number(numero_di_decimali)))) : 0;
     const doc = await Indicator.create({
       code: codeNum,
       name: String(name).trim(),
@@ -46,6 +47,7 @@ export async function create(req, res, next) {
       unit: String(unit || '').trim(),
       order: orderNum,
       numeroCifre: String(numeroCifre ?? '0').trim(),
+      numero_di_decimali: decimals,
       invertScale: Boolean(invertScale),
       rangeMode: rangeMode || 'equalCount',
       ranges: Array.isArray(ranges) ? ranges : [],
@@ -91,6 +93,10 @@ export async function update(req, res, next) {
     if (body.nomeItaliano !== undefined) body.name = body.nomeItaliano;
     if (body.unita !== undefined) body.unit = body.unita;
     if (body.numeroCifre !== undefined) body.numeroCifre = String(body.numeroCifre);
+    if (body.numero_di_decimali !== undefined) {
+      const d = Math.min(2, Math.max(0, Math.floor(Number(body.numero_di_decimali))));
+      body.numero_di_decimali = d;
+    }
     if (body.code !== undefined) {
       const codeNum = Number(body.code);
       if (!Number.isFinite(codeNum) || codeNum < 1 || codeNum > 999) {
